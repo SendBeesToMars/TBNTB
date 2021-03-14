@@ -12,6 +12,8 @@ public class BugScript : MonoBehaviour
     public int inventoryMax = 1;
     public float stoppingDistance = 0.25f;
 
+    bool canMove = true;
+
     Vector2 direction = new Vector2(1, 0).normalized;
     GameObject resourceNode;
     Transform resourceNodeTransform;
@@ -30,33 +32,46 @@ public class BugScript : MonoBehaviour
         homeBase = GameObject.FindGameObjectWithTag("Base");
         homeBaseTransform = homeBase.GetComponent<Transform>();
         homeBaseScript = homeBase.GetComponent<BaseScript>();
-        
     }
     private void Update() {
+        // if node is destroyed look for new one
+        if (resourceNode == null)
+        {
+            resourceNode = GameObject.FindGameObjectWithTag("Node");
+            resourceNodeTransform = resourceNode.GetComponent<Transform>();
+            resourceNodeScript = resourceNode.GetComponent<NodeScript>();
+        }
         // if distance from node to bug is short, stop, else move twards resource node
-        if (Vector2.Distance(transform.position, resourceNodeTransform.position) > stoppingDistance && inventory < inventoryMax)
+        if (canMove && Vector2.Distance(transform.position, resourceNodeTransform.position) >= stoppingDistance && !(inventory >= inventoryMax))
         {
             transform.position = Vector2.MoveTowards(transform.position, resourceNodeTransform.position, speed * Time.deltaTime);
         }
-        else if(Vector2.Distance(transform.position, homeBaseTransform.position) > stoppingDistance && inventory == inventoryMax) {
+        else if(canMove && Vector2.Distance(transform.position, homeBaseTransform.position) >= stoppingDistance && inventory >= inventoryMax) {
             transform.position = Vector2.MoveTowards(transform.position, homeBaseTransform.position, speed * Time.deltaTime);
         }
-        else{
-            if (inventory != inventoryMax)
-            {
-                while(inventory != inventoryMax){
-                resourceNodeScript.resources--;
-                inventory++;
-                }
-            }
-            else if (inventory != 0)
-            {
-                while(inventory != 0){
-                inventory--;
-                homeBaseScript.resources++;
-                }
-            }
-
+        else if (inventory != inventoryMax && Vector2.Distance(transform.position, resourceNodeTransform.position) <= stoppingDistance)
+        {
+            canMove = false;
+            StartCoroutine(harvest(inventoryMax - inventory));
         }
+        else if (inventory != 0 && Vector2.Distance(transform.position, homeBaseTransform.position) <= stoppingDistance)
+        {
+            canMove = false;
+            StartCoroutine(deposit(inventory));
+        }
+    }
+
+    IEnumerator harvest(int resourceNum){
+        resourceNodeScript.resources -= resourceNum;
+        inventory += resourceNum;
+        yield return new WaitForSeconds(resourceNum/2);
+        canMove = true;
+    }
+
+    IEnumerator deposit(int resourceNum){
+        homeBaseScript.resources += resourceNum;
+        inventory -= resourceNum;
+        yield return new WaitForSeconds(resourceNum/2);
+        canMove = true;
     }
 }
