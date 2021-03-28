@@ -397,9 +397,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2411573a92c7e445840ece68e37cee1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  state: 0
   speed: 1
   inventory: 0
-  inventoryMax: 1
+  inventoryMax: 2
   stoppingDistance: 0.25
 --- !u!1 &1892874461
 GameObject:
